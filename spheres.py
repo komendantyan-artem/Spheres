@@ -51,7 +51,7 @@ def collision(sphere1, sphere2):
     '''
     Теперь нужно пересчитать скорости обоих тел из закона сохранения импульса.
     Скорее всего, принцип, по которому я пересчитываю скорости неправилен.
-    Но он может быть неправилен в меру.
+    Но он может быть неправилен в меру (и когда-нибудь это можно будет поправить).
     Плотности везде сокращаются, поэтому я беру площади тел.
     '''
     
@@ -78,11 +78,11 @@ def collision(sphere1, sphere2):
     '''
     
     sphere1.radius = newR1
-    sphere1.Vx = newVx1
-    sphere1.Vy = newVy1
+    '''sphere1.Vx = newVx1
+    sphere1.Vy = newVy1'''
     sphere2.radius = newR2
-    sphere2.Vx = newVx2
-    sphere2.Vy = newVy2
+    '''sphere2.Vx = newVx2
+    sphere2.Vy = newVy2'''
 
 
 class World:
@@ -92,31 +92,52 @@ class World:
         self.number_of_move = 0
     
     def random_init(self):
-        self.radius = 100
-        for i in range(50):
-            x = random.randrange(-20, 20)
-            y = random.randrange(-20, 20)
-            radius = random.randrange(1, 4)
+        self.radius = 300
+        for i in range(100):
+            x = random.randrange(-100, 100)
+            y = random.randrange(-100, 100)
+            radius = random.randrange(1, 50)
             Vx = random.randrange(-3, 4)
             Vy = random.randrange(-3, 4)
             self.spheres.append(Sphere(x, y, radius, Vx, Vy))
     
     def update(self):
         self.number_of_move += 1
-        print(self.number_of_move)
         for i in self.spheres:
             i.motion()
         for i in range(len(self.spheres)):
             for j in range(i + 1, len(self.spheres)):
                 collision(self.spheres[i], self.spheres[j])
+        
         self.spheres = [i for i in self.spheres if i.radius > 0]
 
 
 world = World(None)
 world.random_init()
-while True:
-    if len(world.spheres) == 0:
-        print("Game Over")
-        break
+
+def rendering(color):
+    for i in world.spheres:
+        x0 = int(CENTER_OF_WORLD + i.x - i.radius)
+        y0 = int(CENTER_OF_WORLD + i.y - i.radius)
+        x1 = int(CENTER_OF_WORLD + i.x + i.radius)
+        y1 = int(CENTER_OF_WORLD + i.y + i.radius)
+        GUI.create_oval(x0, y0, x1, y1, outline=color)
+
+def main():
+    root.after(50, main)
+    rendering(BACKGROUND)
     world.update()
-        
+    rendering(COLOR_OF_SPHERE)
+
+CENTER_OF_WORLD = world.radius + 1
+from tkinter import *
+BACKGROUND = "white"
+COLOR_OF_SPHERE = "blue"
+root = Tk()
+GUI = Canvas(root, width=world.radius*2 + 2, height=world.radius*2 + 2)
+GUI.pack()
+GUI.create_oval(2, 2, world.radius*2, world.radius*2, fill=BACKGROUND)
+
+root.after_idle(main)
+root.mainloop()
+ 
