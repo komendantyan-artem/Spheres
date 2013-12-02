@@ -33,7 +33,8 @@ def collision(i, j):
     R1, R2 = sphere1.radius, sphere2.radius
     d = math.sqrt((sphere1.x - sphere2.x)**2 + (sphere1.y - sphere2.y)**2)
     if d >= R1 + R2: return
-    S = R1**2 + R2**2
+    S1, S2 = R1 ** 2, R2 ** 2
+    S = S1 + S2
     
     y = (d - math.sqrt(2*S - d**2))/2
     if y < 0:
@@ -42,47 +43,33 @@ def collision(i, j):
     else:
         x = (d + math.sqrt(2*S - d**2))/2
     
-    if R1 > R2 or R1 == R2 and random.getrandbits(1):
-        newR1, newR2 = x, y
-    else:
-        newR1, newR2 = y, x
-    
     '''
-    Теперь нужно пересчитать скорости обоих тел из закона сохранения импульса.
-    Скорее всего, принцип, по которому я пересчитываю скорости неправилен.
-    Но он может быть неправилен в меру (и когда-нибудь это можно будет поправить).
+    Абсолютно упругий или неупругий удары не подходят.
+    От балды я полагаю, что скорость меньшего тела не изменится,
+        и считаю скорость большего тела из закона сохранения импульса.
     Плотности везде сокращаются, поэтому я беру площади тел.
     '''
     
-    '''Расчёт скоростей. Неправилен, поэтому закомментирован)
     Vx1, Vx2 = sphere1.Vx, sphere2.Vx
-    S1, S2 = R1**2, R2**2
-    newS1 = newR1**2
-    newS2 = newR2**2
-    if newR1 != 0: newVx1 = (S1 * Vx1 + S2 * Vx2) / newS1
-    else:          newVx1 = 0
-    if newR2 != 0: newVx2 = (S1 * Vx1 + S2 * Vx2) / newS2
-    else:          newVx2 = 0
-    
     Vy1, Vy2 = sphere1.Vy, sphere2.Vy
-    if newR1 != 0: newVy1 = (S1 * Vy1 + S2 * Vy2) / newS1
-    else:          newVy1 = 0
-    if newR2 != 0: newVy2 = (S1 * Vy1 + S2 * Vy2) / newS2
-    else:          newVy2 = 0'''
     
-    '''
-    Пока что будем сразу пересчитывать параметры, обнаружив столкновение.
-    Это точно не будет работать, когда тело столкнулось сразу с несколькими телами.
-    В этих случаях нужно сохранять изменения и применять их после обнаружения всех столкновений.
-    Но это я сделаю позже.
-    '''
+    if R1 > R2 or R1 == R2 and random.getrandbits(1):
+        newR1, newR2 = x, y
+        diffS = abs(S1 - newR1**2)
+        newVx1 = (diffS * Vx2 + S1 * Vx1) / (newR1**2)
+        newVy1 = (diffS * Vy2 + S1 * Vy1) / (newR1**2)
+        world.changes[i][1] += newVx1 - Vx1
+        world.changes[i][2] += newVy1 - Vy1
+    else:
+        newR1, newR2 = y, x
+        diffS = abs(S1 - newR1**2)
+        newVx2 = (diffS * Vx1 + S2 * Vx2) / (newR2**2)
+        newVy2 = (diffS * Vy1 + S2 * Vy2) / (newR2**2)
+        world.changes[j][1] += newVx2 - Vx2
+        world.changes[j][2] += newVy2 - Vy2
     
     world.changes[i][0] += newR1 - R1
-    '''sphere1.Vx = newVx1
-    sphere1.Vy = newVy1'''
     world.changes[j][0] += newR2 - R2
-    '''sphere2.Vx = newVx2
-    sphere2.Vy = newVy2'''
 
 def collision_with_border(i):
     sphere = world.spheres[i]
@@ -99,7 +86,7 @@ class World:
     
     def random_init(self):
         self.radius = 300
-        for i in range(100):
+        for i in range(80):
             x = random.randrange(-250, 250)
             y = random.randrange(-250, 250)
             radius = random.randrange(1, 20)
