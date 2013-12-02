@@ -12,14 +12,13 @@ class Sphere:
     def motion(self):
         self.x += self.Vx
         self.y += self.Vy
-        distance = math.sqrt(self.x ** 2 + self.y ** 2) + self.radius
-        if distance > world.radius:
-            self.radius -= distance - world.radius
     
     def jet(self, direction):
         pass
 
-def collision(sphere1, sphere2):
+def collision(i, j):
+    sphere1, sphere2 = world.spheres[i], world.spheres[j]
+    
     '''
     d - расстояние между центрами окружностей.
     S = R1**2 + R2**2
@@ -31,7 +30,7 @@ def collision(sphere1, sphere2):
     x = sqrt(S)
     '''
     
-    R1, R2 = sphere1.x, sphere2.x
+    R1, R2 = sphere1.radius, sphere2.radius
     d = math.sqrt((sphere1.x - sphere2.x)**2 + (sphere1.y - sphere2.y)**2)
     if d >= R1 + R2: return
     S = R1**2 + R2**2
@@ -55,6 +54,7 @@ def collision(sphere1, sphere2):
     Плотности везде сокращаются, поэтому я беру площади тел.
     '''
     
+    '''Расчёт скоростей. Неправилен, поэтому закомментирован)
     Vx1, Vx2 = sphere1.Vx, sphere2.Vx
     S1, S2 = R1**2, R2**2
     newS1 = newR1**2
@@ -68,7 +68,7 @@ def collision(sphere1, sphere2):
     if newR1 != 0: newVy1 = (S1 * Vy1 + S2 * Vy2) / newS1
     else:          newVy1 = 0
     if newR2 != 0: newVy2 = (S1 * Vy1 + S2 * Vy2) / newS2
-    else:          newVy2 = 0
+    else:          newVy2 = 0'''
     
     '''
     Пока что будем сразу пересчитывать параметры, обнаружив столкновение.
@@ -77,39 +77,54 @@ def collision(sphere1, sphere2):
     Но это я сделаю позже.
     '''
     
-    sphere1.radius = newR1
+    world.changes[i][0] += newR1 - R1
     '''sphere1.Vx = newVx1
     sphere1.Vy = newVy1'''
-    sphere2.radius = newR2
+    world.changes[j][0] += newR2 - R2
     '''sphere2.Vx = newVx2
     sphere2.Vy = newVy2'''
+
+def collision_with_border(i):
+    sphere = world.spheres[i]
+    distance = math.sqrt(sphere.x ** 2 + sphere.y ** 2) + sphere.radius
+    if distance > world.radius:
+        world.changes[i][0] = world.radius - distance
 
 
 class World:
     def __init__(self, radius):
         self.radius = radius
         self.spheres = []
-        self.number_of_move = 0
+        self.changes = None
     
     def random_init(self):
         self.radius = 300
         for i in range(100):
-            x = random.randrange(-100, 100)
-            y = random.randrange(-100, 100)
-            radius = random.randrange(1, 50)
+            x = random.randrange(-250, 250)
+            y = random.randrange(-250, 250)
+            radius = random.randrange(1, 20)
             Vx = random.randrange(-3, 4)
             Vy = random.randrange(-3, 4)
             self.spheres.append(Sphere(x, y, radius, Vx, Vy))
     
     def update(self):
-        self.number_of_move += 1
+        self.changes = [[0, 0, 0] for i in range(len(self.spheres))]
         for i in self.spheres:
             i.motion()
         for i in range(len(self.spheres)):
+            collision_with_border(i)
             for j in range(i + 1, len(self.spheres)):
-                collision(self.spheres[i], self.spheres[j])
-        
-        self.spheres = [i for i in self.spheres if i.radius > 0]
+                collision(i, j)
+        self.apply_changes()
+     
+    def apply_changes(self):
+        for i in range(len(self.spheres)):
+            sphere = self.spheres[i]
+            change = self.changes[i]
+            sphere.radius += change[0]
+            sphere.Vx     += change[1]
+            sphere.Vy     += change[2]
+        self.spheres = [i for i in self.spheres if i.radius >= 1]
 
 
 world = World(None)
@@ -136,8 +151,7 @@ COLOR_OF_SPHERE = "blue"
 root = Tk()
 GUI = Canvas(root, width=world.radius*2 + 2, height=world.radius*2 + 2)
 GUI.pack()
-GUI.create_oval(2, 2, world.radius*2, world.radius*2, fill=BACKGROUND)
+GUI.create_oval(0, 0, world.radius*2, world.radius*2, fill=BACKGROUND)
 
 root.after_idle(main)
 root.mainloop()
- 
