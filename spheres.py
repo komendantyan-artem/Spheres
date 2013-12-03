@@ -96,11 +96,16 @@ class World:
     
     def update(self):
         self.changes = [[0, 0, 0] for i in range(len(self.spheres))]
+        self.spheres.sort(key=lambda s: s.x - s.radius)
         for i in self.spheres:
             i.motion()
         for i in range(len(self.spheres)):
+            sphere1 = self.spheres[i]
             collision_with_border(i)
             for j in range(i + 1, len(self.spheres)):
+                sphere2 = self.spheres[j]
+                if sphere2.x - sphere1.x > sphere1.radius + sphere2.radius:
+                    break
                 collision(i, j)
         self.apply_changes()
      
@@ -126,10 +131,10 @@ def rendering(color):
         GUI.create_oval(x0, y0, x1, y1, outline=color)
 
 def main():
-    root.after(50, main)
     rendering(BACKGROUND)
     world.update()
     rendering(COLOR_OF_SPHERE)
+    root.after(50, main)
 
 CENTER_OF_WORLD = world.radius + 1
 from tkinter import *
