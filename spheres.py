@@ -85,13 +85,13 @@ class World:
         self.changes = None
     
     def random_init(self):
-        self.radius = 300
-        for i in range(80):
-            x = random.randrange(-250, 250)
-            y = random.randrange(-250, 250)
-            radius = random.randrange(1, 20)
-            Vx = random.randrange(-3, 4)
-            Vy = random.randrange(-3, 4)
+        self.radius = 400
+        for i in range(600):
+            x = random.randrange(-400, 400)
+            y = random.randrange(-400, 400)
+            radius = random.randrange(1, 15)
+            Vx = random.randrange(-4, 5)
+            Vy = random.randrange(-4, 5)
             self.spheres.append(Sphere(x, y, radius, Vx, Vy))
     
     def update(self):
@@ -122,7 +122,9 @@ class World:
 world = World(None)
 world.random_init()
 
-def rendering(color):
+from tkinter import *
+
+def rendering(color="blue"):
     for i in world.spheres:
         x0 = int(CENTER_OF_WORLD + i.x - i.radius)
         y0 = int(CENTER_OF_WORLD + i.y - i.radius)
@@ -131,19 +133,17 @@ def rendering(color):
         GUI.create_oval(x0, y0, x1, y1, outline=color)
 
 def main():
-    rendering(BACKGROUND)
+    GUI.delete(ALL)
+    GUI.create_oval(0, 0, world.radius*2, world.radius*2, fill="white")
     world.update()
-    rendering(COLOR_OF_SPHERE)
+    rendering()
+    GUI.update()
     root.after(50, main)
 
 CENTER_OF_WORLD = world.radius + 1
-from tkinter import *
-BACKGROUND = "white"
-COLOR_OF_SPHERE = "blue"
 root = Tk()
 GUI = Canvas(root, width=world.radius*2 + 2, height=world.radius*2 + 2)
 GUI.pack()
-GUI.create_oval(0, 0, world.radius*2, world.radius*2, fill=BACKGROUND)
 
 root.after_idle(main)
 root.mainloop()
