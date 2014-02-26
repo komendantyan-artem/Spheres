@@ -125,19 +125,20 @@ world.random_init()
 from tkinter import *
 
 def rendering(color="blue"):
+    GUI.delete(ALL)
+    GUI.create_oval(0, 0, world.radius*2, world.radius*2, fill="white")
     for i in world.spheres:
         x0 = int(CENTER_OF_WORLD + i.x - i.radius)
         y0 = int(CENTER_OF_WORLD + i.y - i.radius)
         x1 = int(CENTER_OF_WORLD + i.x + i.radius)
         y1 = int(CENTER_OF_WORLD + i.y + i.radius)
         GUI.create_oval(x0, y0, x1, y1, outline=color)
+    GUI.update()
+    
 
 def main():
-    GUI.delete(ALL)
-    GUI.create_oval(0, 0, world.radius*2, world.radius*2, fill="white")
     world.update()
     rendering()
-    GUI.update()
     root.after(50, main)
 
 CENTER_OF_WORLD = world.radius + 1
