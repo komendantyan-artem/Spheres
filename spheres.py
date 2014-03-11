@@ -12,9 +12,10 @@ class Sphere:
     def motion(self):
         self.x += self.Vx
         self.y += self.Vy
-    
-    def jet(self, direction):
-        pass
+
+class Change:
+    def __init__(self):
+        self.radius = self.Vx = self.Vy = 0
 
 def collision(i, j):
     sphere1, sphere2 = world.spheres[i], world.spheres[j]
@@ -41,7 +42,7 @@ def collision(i, j):
         y = 0
         x = math.sqrt(S)
     else:
-        x = (d + math.sqrt(2*S - d**2))/2
+        x = d - y
     
     '''
     Абсолютно упругий или неупругий удары не подходят.
@@ -58,50 +59,56 @@ def collision(i, j):
         diffS = abs(S1 - newR1**2)
         newVx1 = (diffS * Vx2 + S1 * Vx1) / (newR1**2)
         newVy1 = (diffS * Vy2 + S1 * Vy1) / (newR1**2)
-        world.changes[i][1] += newVx1 - Vx1
-        world.changes[i][2] += newVy1 - Vy1
+        world.changes[i].Vx += newVx1 - Vx1
+        world.changes[i].Vy += newVy1 - Vy1
     else:
         newR1, newR2 = y, x
         diffS = abs(S1 - newR1**2)
         newVx2 = (diffS * Vx1 + S2 * Vx2) / (newR2**2)
         newVy2 = (diffS * Vy1 + S2 * Vy2) / (newR2**2)
-        world.changes[j][1] += newVx2 - Vx2
-        world.changes[j][2] += newVy2 - Vy2
+        world.changes[j].Vx += newVx2 - Vx2
+        world.changes[j].Vy += newVy2 - Vy2
     
-    world.changes[i][0] += newR1 - R1
-    world.changes[j][0] += newR2 - R2
+    world.changes[i].radius += newR1 - R1
+    world.changes[j].radius += newR2 - R2
 
-def collision_with_border(i):
-    sphere = world.spheres[i]
-    distance = math.sqrt(sphere.x ** 2 + sphere.y ** 2) + sphere.radius
-    if distance > world.radius:
-        world.changes[i][0] = world.radius - distance
+def collision_with_border(sphere):
+    if(sphere.x + sphere.radius > world.width and sphere.Vx > 0 or
+       sphere.x - sphere.radius < 0 and sphere.Vx < 0):
+        sphere.Vx *= -1
+    if(sphere.y + sphere.radius > world.height and sphere.Vy > 0 or
+       sphere.y - sphere.radius < 0 and sphere.Vy < 0):
+        sphere.Vy *= -1
 
 
 class World:
-    def __init__(self, radius):
-        self.radius = radius
+    def __init__(self):
+        self.radius = 0
         self.spheres = []
         self.changes = None
+        self.me = None
     
     def random_init(self):
-        self.radius = 400
-        for i in range(600):
-            x = random.randrange(-400, 400)
-            y = random.randrange(-400, 400)
-            radius = random.randrange(1, 15)
+        self.width = 1000
+        self.height = 600
+        for i in range(200):
+            x = random.randrange(self.width)
+            y = random.randrange(self.height)
+            radius = random.randrange(1, 8)
             Vx = random.randrange(-4, 5)
             Vy = random.randrange(-4, 5)
             self.spheres.append(Sphere(x, y, radius, Vx, Vy))
+        self.me = self.spheres[0]
+        self.me.radius = 10
     
     def update(self):
-        self.changes = [[0, 0, 0] for i in range(len(self.spheres))]
+        self.changes = [Change() for i in range(len(self.spheres))]
         self.spheres.sort(key=lambda s: s.x - s.radius)
         for i in self.spheres:
             i.motion()
+            collision_with_border(i)
         for i in range(len(self.spheres)):
             sphere1 = self.spheres[i]
-            collision_with_border(i)
             for j in range(i + 1, len(self.spheres)):
                 sphere2 = self.spheres[j]
                 if sphere2.x - sphere1.x > sphere1.radius + sphere2.radius:
@@ -113,27 +120,53 @@ class World:
         for i in range(len(self.spheres)):
             sphere = self.spheres[i]
             change = self.changes[i]
-            sphere.radius += change[0]
-            sphere.Vx     += change[1]
-            sphere.Vy     += change[2]
+            sphere.radius += change.radius
+            sphere.Vx     += change.Vx
+            sphere.Vy     += change.Vy
         self.spheres = [i for i in self.spheres if i.radius >= 1]
+    
+    def jet(self, sphere, x, y):
+        V_begin = 15
+        R = sphere.radius
+        newR = 0.96 * R
+        r = 0.07 * R + 0.5
+        
+        angle = math.atan2(sphere.y - y, sphere.x - x)
+        v_x = -V_begin * math.cos(angle)
+        v_y = -V_begin * math.sin(angle)
+        
+        sphere.Vx = (R ** 2 * sphere.Vx - r ** 2 * v_x) / newR ** 2
+        sphere.Vy = (R ** 2 * sphere.Vy - r ** 2 * v_y) / newR ** 2
+        sphere.radius = newR;
+        
+        x = sphere.x - (newR + r) * math.cos(angle)
+        y = sphere.y - (newR + r) * math.sin(angle)
+        
+        self.spheres.append(Sphere(x, y, r, v_x, v_y))
 
 
-world = World(None)
+world = World()
 world.random_init()
 
 from tkinter import *
 
-def rendering(color="blue"):
-    GUI.delete(ALL)
-    GUI.create_oval(0, 0, world.radius*2, world.radius*2, fill="white")
+def rendering():
+    graphic.delete(ALL)
+    graphic.create_rectangle(2, 2, world.width + 2, world.height + 2, fill="white")
     for i in world.spheres:
-        x0 = int(CENTER_OF_WORLD + i.x - i.radius)
-        y0 = int(CENTER_OF_WORLD + i.y - i.radius)
-        x1 = int(CENTER_OF_WORLD + i.x + i.radius)
-        y1 = int(CENTER_OF_WORLD + i.y + i.radius)
-        GUI.create_oval(x0, y0, x1, y1, outline=color)
-    GUI.update()
+        x0 = int(i.x - i.radius)
+        y0 = int(i.y - i.radius)
+        x1 = int(i.x + i.radius)
+        y1 = int(i.y + i.radius)
+        color = "blue" if i.radius < world.me.radius else "red"
+        graphic.create_oval(x0, y0, x1, y1, outline=color)
+    if world.me.radius >= 1:
+        x0 = int(world.me.x - world.me.radius)
+        y0 = int(world.me.y - world.me.radius)
+        x1 = int(world.me.x + world.me.radius)
+        y1 = int(world.me.y + world.me.radius)
+        graphic.create_oval(x0, y0, x1, y1, outline="green")
+    graphic.update()
     
 
 def main():
@@ -141,10 +174,10 @@ def main():
     rendering()
     root.after(50, main)
 
-CENTER_OF_WORLD = world.radius + 1
 root = Tk()
-GUI = Canvas(root, width=world.radius*2 + 2, height=world.radius*2 + 2)
-GUI.pack()
+graphic = Canvas(root, width=world.width + 2, height=world.height + 2)
+graphic.bind('<ButtonPress-1>', lambda event: world.jet(world.me, event.x, event.y))
+graphic.pack()
 
 root.after_idle(main)
 root.mainloop()
