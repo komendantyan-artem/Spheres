@@ -88,18 +88,18 @@ class World:
         self.changes = None
         self.me = None
     
-    def random_init(self):
-        self.width = 1000
-        self.height = 600
-        for i in range(200):
+    def random_init(self, width=700, height=400, max_radius=10, max_velocity_on_axe=4):
+        self.width = 700
+        self.height = 400
+        for i in range(300):
             x = random.randrange(self.width)
             y = random.randrange(self.height)
-            radius = random.randrange(1, 8)
-            Vx = random.randrange(-4, 5)
-            Vy = random.randrange(-4, 5)
+            radius = random.randrange(1, max_radius)
+            Vx = random.randrange(-max_velocity_on_axe, max_velocity_on_axe + 1)
+            Vy = random.randrange(-max_velocity_on_axe, max_velocity_on_axe + 1)
             self.spheres.append(Sphere(x, y, radius, Vx, Vy))
         self.me = self.spheres[0]
-        self.me.radius = 10
+        self.me.radius = random.randrange(max_radius - 1, max_radius + 3)
     
     def update(self):
         self.changes = [Change() for i in range(len(self.spheres))]
@@ -127,9 +127,10 @@ class World:
     
     def jet(self, sphere, x, y):
         V_begin = 15
+        #S1 + S2 = S => newR**2 + r**2 = R**2
         R = sphere.radius
-        newR = 0.96 * R
-        r = 0.07 * R + 0.5
+        newR = 0.98 * R
+        r = 0.199 * R
         
         angle = math.atan2(sphere.y - y, sphere.x - x)
         v_x = -V_begin * math.cos(angle)
