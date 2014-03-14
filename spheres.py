@@ -102,11 +102,11 @@ class World:
         self.me.radius = random.randrange(max_radius, max_radius + 2)
     
     def update(self):
-        self.changes = [Change() for i in range(len(self.spheres))]
-        self.spheres.sort(key=lambda s: s.x - s.radius)
         for i in self.spheres:
             i.motion()
             collision_with_border(i)
+        self.changes = [Change() for i in range(len(self.spheres))]
+        self.spheres.sort(key=lambda s: s.x - s.radius)
         for i in range(len(self.spheres)):
             sphere1 = self.spheres[i]
             for j in range(i + 1, len(self.spheres)):
