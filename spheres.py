@@ -99,7 +99,7 @@ class World:
             Vy = random.randrange(-max_velocity_on_axe, max_velocity_on_axe + 1)
             self.spheres.append(Sphere(x, y, radius, Vx, Vy))
         self.me = self.spheres[0]
-        self.me.radius = random.randrange(max_radius - 1, max_radius + 3)
+        self.me.radius = random.randrange(max_radius, max_radius + 2)
     
     def update(self):
         self.changes = [Change() for i in range(len(self.spheres))]
@@ -126,11 +126,17 @@ class World:
         self.spheres = [i for i in self.spheres if i.radius >= 1]
     
     def jet(self, sphere, x, y):
+        if world.me.radius < 1:
+            return
+        
         V_begin = 15
         #S1 + S2 = S => newR**2 + r**2 = R**2
         R = sphere.radius
         newR = 0.98 * R
         r = 0.199 * R
+        
+        if sphere.y == y and sphere.x == x:
+            return
         
         angle = math.atan2(sphere.y - y, sphere.x - x)
         v_x = -V_begin * math.cos(angle)
