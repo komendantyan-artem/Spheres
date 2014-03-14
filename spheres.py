@@ -123,10 +123,10 @@ class World:
             sphere.radius += change.radius
             sphere.Vx     += change.Vx
             sphere.Vy     += change.Vy
-        self.spheres = [i for i in self.spheres if i.radius >= 1]
+        self.spheres = [i for i in self.spheres if i.radius > 0]
     
     def jet(self, sphere, x, y):
-        if sphere.radius < 1:
+        if sphere.radius <= 0:
             return
         
         V_begin = 15
