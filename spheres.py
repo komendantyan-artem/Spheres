@@ -126,7 +126,7 @@ class World:
         self.spheres = [i for i in self.spheres if i.radius >= 1]
     
     def jet(self, sphere, x, y):
-        if world.me.radius < 1:
+        if sphere.radius < 1:
             return
         
         V_begin = 15
